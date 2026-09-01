@@ -16,7 +16,7 @@ function authMiddleware(req, res, next) {
     } catch (err) {
         console.log("err message:", err.message)
     };
-
+    next();
 
 };
 module.exports = authMiddleware;

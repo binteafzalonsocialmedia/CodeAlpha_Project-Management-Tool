@@ -23,8 +23,10 @@ const db = require("./db/database");
 const authController = require('./controllers/authController');
 const authRoutes = require("./routes/authRoutes");
 const token = require("./utils/generateToken");
+const projectRoutes = require("./routes/projectRoutes");
 
 app.use("/auth", authRoutes);
+app.use("/project", projectRoutes);
 
 app.listen(PORT, () => {
     console.log("Server is running on port `${PORT}`")//this port?

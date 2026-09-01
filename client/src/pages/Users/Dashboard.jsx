@@ -1,40 +1,33 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const UserDashboard = () => {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState("overview");
 
-    const [projects, setProjects] = useState([
-        {
-            id: 1,
-            name: "Project Management Tool",
-            description: "Collaborative project management platform.",
-            role: "Owner",
-            members: 4,
-            progress: 65,
-            status: "Active",
-        },
-        {
-            id: 2,
-            name: "E-Commerce Platform",
-            description: "Full-stack e-commerce application.",
-            role: "Member",
-            members: 6,
-            progress: 35,
-            status: "Active",
-        },
-    ]);
+    const [projects, setProjects] = useState([]);
 
     const [createProjectData, setCreateProjectData] = useState({
-        name: "",
-        description: "",
+        projectname: "",
+        projectdetails: "",
     });
 
     const [joinProjectData, setJoinProjectData] = useState({
         projectCode: "",
     });
+
+    const [loading, setLoading] = useState(false);
+
+    const [error, setError] = useState("");
+
+    const [success, setSuccess] = useState("");
+
+
+    // =========================
+    // CREATE PROJECT FORM
+    // =========================
 
     const handleCreateChange = (e) => {
         const { name, value } = e.target;
@@ -45,6 +38,76 @@ const UserDashboard = () => {
         }));
     };
 
+
+    const handleCreateProject = async (e) => {
+        e.preventDefault();
+
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        try {
+            const response = await axios.post(
+                "http://localhost:5000/project/createproject",
+                {
+                    projectname: createProjectData.projectname,
+                    projectdetails: createProjectData.projectdetails,
+                },
+                {
+                    withCredentials: true,
+                }
+            );
+
+            console.log("PROJECT CREATED:", response.data);
+
+            const newProject = response.data;
+
+            // Convert backend project structure
+            // into the structure your UI uses
+            const formattedProject = {
+                id: newProject._id,
+                name: newProject.projectname,
+                description: newProject.projectdetails,
+                role: "Owner",
+                members: newProject.members?.length || 1,
+                progress: 0,
+                status: "Active",
+            };
+
+            setProjects((prev) => [
+                ...prev,
+                formattedProject,
+            ]);
+
+            setCreateProjectData({
+                projectname: "",
+                projectdetails: "",
+            });
+
+            setSuccess("Project created successfully.");
+
+            // Optional:
+            // automatically move user to My Projects
+            setActiveTab("projects");
+
+        } catch (err) {
+            console.log("CREATE PROJECT ERROR:", err);
+
+            setError(
+                err.response?.data?.message ||
+                "Failed to create project."
+            );
+
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    // =========================
+    // JOIN PROJECT
+    // =========================
+
     const handleJoinChange = (e) => {
         const { name, value } = e.target;
 
@@ -54,33 +117,33 @@ const UserDashboard = () => {
         }));
     };
 
-    const handleCreateProject = (e) => {
-        e.preventDefault();
-
-        console.log("Create Project:", createProjectData);
-
-        // Backend API will be connected here.
-    };
 
     const handleJoinProject = (e) => {
         e.preventDefault();
 
         console.log("Join Project:", joinProjectData);
 
-        // Backend API will be connected here.
+        // Backend API will be connected later.
     };
+
+
+    // =========================
+    // LOGOUT
+    // =========================
 
     const handleLogout = () => {
         console.log("Logout");
 
-        // Logout API will be connected here.
+        // Logout API will be connected later.
     };
+
 
     return (
         <div className="min-h-screen bg-gray-100">
 
             {/* Navbar */}
             <nav className="bg-[#033E3E] text-white">
+
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
                     <div>
@@ -96,6 +159,7 @@ const UserDashboard = () => {
                     <div className="flex items-center gap-4">
 
                         <div className="hidden text-right sm:block">
+
                             <p className="text-sm font-semibold">
                                 Socialmediauser
                             </p>
@@ -103,6 +167,7 @@ const UserDashboard = () => {
                             <p className="text-xs text-[#92C7C7]">
                                 User
                             </p>
+
                         </div>
 
                         <button
@@ -113,13 +178,17 @@ const UserDashboard = () => {
                         </button>
 
                     </div>
+
                 </div>
+
             </nav>
 
 
             <div className="mx-auto flex max-w-7xl">
 
+
                 {/* Sidebar */}
+
                 <aside className="hidden min-h-[calc(100vh-72px)] w-64 border-r bg-white p-5 md:block">
 
                     <p className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400">
@@ -138,6 +207,7 @@ const UserDashboard = () => {
                             Overview
                         </button>
 
+
                         <button
                             onClick={() => setActiveTab("projects")}
                             className={`w-full rounded-lg px-4 py-3 text-left text-sm font-semibold ${activeTab === "projects"
@@ -148,6 +218,7 @@ const UserDashboard = () => {
                             My Projects
                         </button>
 
+
                         <button
                             onClick={() => setActiveTab("create")}
                             className={`w-full rounded-lg px-4 py-3 text-left text-sm font-semibold ${activeTab === "create"
@@ -157,6 +228,7 @@ const UserDashboard = () => {
                         >
                             Create Project
                         </button>
+
 
                         <button
                             onClick={() => setActiveTab("join")}
@@ -169,17 +241,25 @@ const UserDashboard = () => {
                         </button>
 
                     </div>
+
                 </aside>
 
 
                 {/* Main Content */}
+
                 <main className="flex-1 p-6 sm:p-8">
 
-                    {/* Overview */}
+
+                    {/* =========================
+                        OVERVIEW
+                    ========================= */}
+
                     {activeTab === "overview" && (
+
                         <div>
 
                             <div className="mb-8">
+
                                 <p className="text-sm font-semibold text-[#4C8888]">
                                     DASHBOARD
                                 </p>
@@ -191,13 +271,16 @@ const UserDashboard = () => {
                                 <p className="mt-2 text-gray-500">
                                     Manage your projects and collaborate with your team.
                                 </p>
+
                             </div>
 
 
                             {/* Statistics */}
+
                             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
 
                                 <div className="rounded-2xl bg-white p-6 shadow-sm">
+
                                     <p className="text-sm text-gray-500">
                                         Total Projects
                                     </p>
@@ -205,44 +288,64 @@ const UserDashboard = () => {
                                     <h3 className="mt-2 text-3xl font-bold text-[#033E3E]">
                                         {projects.length}
                                     </h3>
+
                                 </div>
 
+
                                 <div className="rounded-2xl bg-white p-6 shadow-sm">
+
                                     <p className="text-sm text-gray-500">
                                         Active Projects
                                     </p>
 
                                     <h3 className="mt-2 text-3xl font-bold text-green-600">
-                                        {projects.filter(
-                                            (project) => project.status === "Active"
-                                        ).length}
+                                        {
+                                            projects.filter(
+                                                (project) =>
+                                                    project.status === "Active"
+                                            ).length
+                                        }
                                     </h3>
+
                                 </div>
 
+
                                 <div className="rounded-2xl bg-white p-6 shadow-sm">
+
                                     <p className="text-sm text-gray-500">
                                         Team Members
                                     </p>
 
                                     <h3 className="mt-2 text-3xl font-bold text-[#033E3E]">
-                                        10
+                                        {
+                                            projects.reduce(
+                                                (total, project) =>
+                                                    total + project.members,
+                                                0
+                                            )
+                                        }
                                     </h3>
+
                                 </div>
 
+
                                 <div className="rounded-2xl bg-white p-6 shadow-sm">
+
                                     <p className="text-sm text-gray-500">
                                         Pending Invitations
                                     </p>
 
                                     <h3 className="mt-2 text-3xl font-bold text-orange-500">
-                                        2
+                                        0
                                     </h3>
+
                                 </div>
 
                             </div>
 
 
                             {/* Quick Actions */}
+
                             <div className="mt-8">
 
                                 <h3 className="mb-4 text-xl font-bold text-[#033E3E]">
@@ -255,6 +358,7 @@ const UserDashboard = () => {
                                         onClick={() => setActiveTab("create")}
                                         className="rounded-2xl bg-[#033E3E] p-6 text-left text-white transition hover:-translate-y-1 hover:bg-[#075858]"
                                     >
+
                                         <p className="text-lg font-bold">
                                             + Create Project
                                         </p>
@@ -262,12 +366,15 @@ const UserDashboard = () => {
                                         <p className="mt-2 text-sm text-[#92C7C7]">
                                             Start a new project and invite your team.
                                         </p>
+
                                     </button>
+
 
                                     <button
                                         onClick={() => setActiveTab("join")}
                                         className="rounded-2xl border-2 border-[#92C7C7] bg-white p-6 text-left transition hover:-translate-y-1"
                                     >
+
                                         <p className="text-lg font-bold text-[#033E3E]">
                                             Join Project
                                         </p>
@@ -275,6 +382,7 @@ const UserDashboard = () => {
                                         <p className="mt-2 text-sm text-gray-500">
                                             Enter a project code to join a team.
                                         </p>
+
                                     </button>
 
                                 </div>
@@ -283,6 +391,7 @@ const UserDashboard = () => {
 
 
                             {/* Recent Projects */}
+
                             <div className="mt-8">
 
                                 <div className="mb-4 flex items-center justify-between">
@@ -300,6 +409,7 @@ const UserDashboard = () => {
 
                                 </div>
 
+
                                 <div className="grid gap-5 lg:grid-cols-2">
 
                                     {projects.slice(0, 2).map((project) => (
@@ -312,6 +422,7 @@ const UserDashboard = () => {
                                             <div className="flex items-start justify-between">
 
                                                 <div>
+
                                                     <h4 className="text-lg font-bold text-[#033E3E]">
                                                         {project.name}
                                                     </h4>
@@ -319,6 +430,7 @@ const UserDashboard = () => {
                                                     <p className="mt-1 text-sm text-gray-500">
                                                         {project.description}
                                                     </p>
+
                                                 </div>
 
                                                 <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
@@ -327,9 +439,11 @@ const UserDashboard = () => {
 
                                             </div>
 
+
                                             <div className="mt-5">
 
                                                 <div className="mb-2 flex justify-between text-xs">
+
                                                     <span className="text-gray-500">
                                                         Progress
                                                     </span>
@@ -337,20 +451,26 @@ const UserDashboard = () => {
                                                     <span className="font-bold">
                                                         {project.progress}%
                                                     </span>
+
                                                 </div>
 
+
                                                 <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+
                                                     <div
                                                         className="h-full rounded-full bg-[#033E3E]"
                                                         style={{
                                                             width: `${project.progress}%`,
                                                         }}
                                                     />
+
                                                 </div>
 
                                             </div>
 
+
                                             <div className="mt-5 flex justify-between text-xs text-gray-500">
+
                                                 <span>
                                                     {project.members} members
                                                 </span>
@@ -358,6 +478,7 @@ const UserDashboard = () => {
                                                 <span>
                                                     {project.role}
                                                 </span>
+
                                             </div>
 
                                         </div>
@@ -369,14 +490,20 @@ const UserDashboard = () => {
                             </div>
 
                         </div>
+
                     )}
 
 
-                    {/* Projects */}
+                    {/* =========================
+                        PROJECTS
+                    ========================= */}
+
                     {activeTab === "projects" && (
+
                         <div>
 
                             <div className="mb-8">
+
                                 <h2 className="text-3xl font-bold text-[#033E3E]">
                                     My Projects
                                 </h2>
@@ -384,7 +511,9 @@ const UserDashboard = () => {
                                 <p className="mt-2 text-gray-500">
                                     Projects you own or collaborate on.
                                 </p>
+
                             </div>
+
 
                             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 
@@ -407,13 +536,16 @@ const UserDashboard = () => {
 
                                         </div>
 
+
                                         <p className="mt-3 text-sm text-gray-500">
                                             {project.description}
                                         </p>
 
+
                                         <div className="mt-5 text-sm text-gray-500">
                                             {project.members} members
                                         </div>
+
 
                                         <button
                                             onClick={() =>
@@ -431,14 +563,20 @@ const UserDashboard = () => {
                             </div>
 
                         </div>
+
                     )}
 
 
-                    {/* Create Project */}
+                    {/* =========================
+                        CREATE PROJECT
+                    ========================= */}
+
                     {activeTab === "create" && (
+
                         <div className="mx-auto max-w-2xl">
 
                             <div className="mb-8">
+
                                 <h2 className="text-3xl font-bold text-[#033E3E]">
                                     Create Project
                                 </h2>
@@ -446,7 +584,9 @@ const UserDashboard = () => {
                                 <p className="mt-2 text-gray-500">
                                     Create a workspace for your team.
                                 </p>
+
                             </div>
+
 
                             <form
                                 onSubmit={handleCreateProject}
@@ -455,43 +595,81 @@ const UserDashboard = () => {
 
                                 <div className="space-y-5">
 
+
+                                    {/* Error */}
+
+                                    {error && (
+
+                                        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+                                            {error}
+                                        </div>
+
+                                    )}
+
+
+                                    {/* Success */}
+
+                                    {success && (
+
+                                        <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-600">
+                                            {success}
+                                        </div>
+
+                                    )}
+
+
+                                    {/* Project Name */}
+
                                     <div>
+
                                         <label className="mb-2 block text-sm font-semibold text-gray-700">
                                             Project Name
                                         </label>
 
                                         <input
                                             type="text"
-                                            name="name"
-                                            value={createProjectData.name}
+                                            name="projectname"
+                                            value={createProjectData.projectname}
                                             onChange={handleCreateChange}
                                             placeholder="e.g. E-Commerce Platform"
                                             required
                                             className="w-full rounded-xl border-2 border-[#92C7C7] px-4 py-3 outline-none focus:border-[#033E3E]"
                                         />
+
                                     </div>
 
+
+                                    {/* Project Details */}
+
                                     <div>
+
                                         <label className="mb-2 block text-sm font-semibold text-gray-700">
                                             Description
                                         </label>
 
                                         <textarea
-                                            name="description"
-                                            value={createProjectData.description}
+                                            name="projectdetails"
+                                            value={createProjectData.projectdetails}
                                             onChange={handleCreateChange}
                                             placeholder="Describe your project..."
                                             rows="5"
                                             required
                                             className="w-full resize-none rounded-xl border-2 border-[#92C7C7] px-4 py-3 outline-none focus:border-[#033E3E]"
                                         />
+
                                     </div>
+
 
                                     <button
                                         type="submit"
-                                        className="w-full rounded-xl bg-[#033E3E] py-4 font-bold text-white transition hover:bg-[#075858]"
+                                        disabled={loading}
+                                        className="w-full rounded-xl bg-[#033E3E] py-4 font-bold text-white transition hover:bg-[#075858] disabled:cursor-not-allowed disabled:opacity-60"
                                     >
-                                        Create Project
+
+                                        {loading
+                                            ? "Creating..."
+                                            : "Create Project"}
+
                                     </button>
 
                                 </div>
@@ -499,14 +677,20 @@ const UserDashboard = () => {
                             </form>
 
                         </div>
+
                     )}
 
 
-                    {/* Join Project */}
+                    {/* =========================
+                        JOIN PROJECT
+                    ========================= */}
+
                     {activeTab === "join" && (
+
                         <div className="mx-auto max-w-2xl">
 
                             <div className="mb-8">
+
                                 <h2 className="text-3xl font-bold text-[#033E3E]">
                                     Join Project
                                 </h2>
@@ -514,7 +698,9 @@ const UserDashboard = () => {
                                 <p className="mt-2 text-gray-500">
                                     Enter the invitation/project code provided by your team.
                                 </p>
+
                             </div>
+
 
                             <form
                                 onSubmit={handleJoinProject}
@@ -524,6 +710,7 @@ const UserDashboard = () => {
                                 <label className="mb-2 block text-sm font-semibold text-gray-700">
                                     Project Code
                                 </label>
+
 
                                 <input
                                     type="text"
@@ -535,9 +722,10 @@ const UserDashboard = () => {
                                     className="w-full rounded-xl border-2 border-[#92C7C7] px-4 py-3 uppercase outline-none focus:border-[#033E3E]"
                                 />
 
+
                                 <button
                                     type="submit"
-                                    className="mt-5 w-full rounded-xl bg-[#033E3E] py-4 font-bold text-white transition hover:bg-[#075858]"
+                                    className="mt-5 w-full rounded-xl bg-[#033E3E] py-4 font-bold text-white hover:bg-[#075858]"
                                 >
                                     Join Project
                                 </button>
@@ -545,6 +733,7 @@ const UserDashboard = () => {
                             </form>
 
                         </div>
+
                     )}
 
                 </main>
