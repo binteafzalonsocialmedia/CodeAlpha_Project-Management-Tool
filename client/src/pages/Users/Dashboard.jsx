@@ -24,10 +24,7 @@ const UserDashboard = () => {
 
     const [success, setSuccess] = useState("");
 
-
-    // =========================
     // CREATE PROJECT FORM
-    // =========================
 
     const handleCreateChange = (e) => {
         const { name, value } = e.target;
@@ -52,6 +49,7 @@ const UserDashboard = () => {
                 {
                     projectname: createProjectData.projectname,
                     projectdetails: createProjectData.projectdetails,
+                    inviteCode: createProjectData.inviteCode
                 },
                 {
                     withCredentials: true,
@@ -69,6 +67,7 @@ const UserDashboard = () => {
                 name: newProject.projectname,
                 description: newProject.projectdetails,
                 role: "Owner",
+                inviteCode: newProject.inviteCode,
                 members: newProject.members?.length || 1,
                 progress: 0,
                 status: "Active",
@@ -82,6 +81,7 @@ const UserDashboard = () => {
             setCreateProjectData({
                 projectname: "",
                 projectdetails: "",
+                inviteCode: ""
             });
 
             setSuccess("Project created successfully.");
@@ -103,10 +103,7 @@ const UserDashboard = () => {
         }
     };
 
-
-    // =========================
     // JOIN PROJECT
-    // =========================
 
     const handleJoinChange = (e) => {
         const { name, value } = e.target;
@@ -126,11 +123,7 @@ const UserDashboard = () => {
         // Backend API will be connected later.
     };
 
-
-    // =========================
     // LOGOUT
-    // =========================
-
     const handleLogout = () => {
         console.log("Logout");
 
@@ -250,9 +243,7 @@ const UserDashboard = () => {
                 <main className="flex-1 p-6 sm:p-8">
 
 
-                    {/* =========================
-                        OVERVIEW
-                    ========================= */}
+                    {/*OVERVIEW*/}
 
                     {activeTab === "overview" && (
 
@@ -494,9 +485,7 @@ const UserDashboard = () => {
                     )}
 
 
-                    {/* =========================
-                        PROJECTS
-                    ========================= */}
+                    {/*PROJECTS */}
 
                     {activeTab === "projects" && (
 
@@ -541,6 +530,9 @@ const UserDashboard = () => {
                                             {project.description}
                                         </p>
 
+                                        <p className="mt-3 text-sm text-gray-500">
+                                            Invite code:  {project.inviteCode}
+                                        </p>
 
                                         <div className="mt-5 text-sm text-gray-500">
                                             {project.members} members

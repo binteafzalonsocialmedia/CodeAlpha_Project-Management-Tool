@@ -24,8 +24,9 @@ exports.Project = async (req, res, next) => {
         const NewProject = await Project.create({
             projectname,
             projectdetails,
+            inviteCode: `${Math.floor(Math.random() * 10000).toString(36).padStart(4, "0")}-${Math.floor(Math.random() * 10000).toString(36).padStart(4, "0")}`,
             owner: req.user.id,
-            members: [req.user._id]
+            members: [req.user.id]
         });
         console.log("Done 3")
         console.log("Done newProject:", NewProject)

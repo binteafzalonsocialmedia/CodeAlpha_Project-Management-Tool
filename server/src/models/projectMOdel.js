@@ -12,6 +12,7 @@ const projectSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -22,6 +23,11 @@ const projectSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
+
+    inviteCode: {
+        type: String,
+        unique: true
+    },
 
     createdAt: {
         type: Date,
