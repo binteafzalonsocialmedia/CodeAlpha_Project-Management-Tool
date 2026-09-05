@@ -8,7 +8,22 @@ const token = require("../utils/generateToken");
 const User = require("../models/userModel");
 
 exports.showProject = async (req, res) => {
-    res.render("Users/Dashboard")
+    try {
+        console.log("USER ID:", req.user.id);
+        const projects = await Project.find({
+            $or: [
+                { owner: req.user.id },
+                { members: req.user.id }
+            ]
+        });
+        console.log("PROJECTS:", projects);
+        return res.status(200).json(projects);
+
+    } catch (err) {
+        return res.status(500).json({
+            message: err.message
+        });
+    }
 };
 
 exports.Project = async (req, res, next) => {
@@ -28,12 +43,52 @@ exports.Project = async (req, res, next) => {
             owner: req.user.id,
             members: [req.user.id]
         });
-        console.log("Done 3")
+
         console.log("Done newProject:", NewProject)
         res.send(NewProject);
-        console.log("Done 4")
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
-    console.log("Done 5")
+
+};
+
+//join project 
+exports.JoinProject = async (req, res, next) => {
+    try {
+        const { inviteCode } = req.body;
+        console.log("inviteCode:", inviteCode)
+        const findProject = await Project.findOne({ inviteCode });
+        console.log(findProject, "1");
+        if (!findProject) {
+            return res.status(404).json({
+                message: "Project not found"
+            });
+        }
+
+        const isMatched = findProject.members.some(
+            member => member.toString() === req.user.id.toString()
+        );
+        console.log(isMatched);
+        if (isMatched) {
+            return res.status(400).json({
+                message: "Already a member"
+            });
+        }
+
+        findProject.members.push(req.user.id);
+
+        await findProject.save();
+        console.log(findProject);
+        return res.status(200).json({
+            message: "Joined successfully",
+            project: findProject
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message
+        });
+    }
 };

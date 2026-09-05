@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import API from "../../api/axios";
 
 const UserDashboard = () => {
     const navigate = useNavigate();
@@ -15,7 +15,7 @@ const UserDashboard = () => {
     });
 
     const [joinProjectData, setJoinProjectData] = useState({
-        projectCode: "",
+        inviteCode: "",
     });
 
     const [loading, setLoading] = useState(false);
@@ -24,19 +24,80 @@ const UserDashboard = () => {
 
     const [success, setSuccess] = useState("");
 
+
+    // =========================
+    // FETCH PROJECTS
+    // =========================
+
+    useEffect(() => {
+
+        const fetchProjects = async () => {
+
+            try {
+
+                const response = await API.get(
+                    "http://localhost:5000/project/createproject",
+                    {
+                        withCredentials: true,
+                    }
+                );
+
+                console.log(
+                    "PROJECTS FROM DATABASE:",
+                    response.data
+                );
+
+                const formattedProjects = response.data.map((project) => ({
+                    id: project._id,
+                    name: project.projectname,
+                    description: project.projectdetails,
+                    role: "Owner",
+                    inviteCode: project.inviteCode,
+                    members: project.members?.length || 0,
+                    progress: 0,
+                    status: "Active",
+                }));
+
+                setProjects(formattedProjects);
+
+            } catch (err) {
+
+                console.log(
+                    "FETCH PROJECTS ERROR:",
+                    err
+                );
+
+            }
+
+        };
+
+        fetchProjects();
+
+    }, []);
+
+
+    // =========================
     // CREATE PROJECT FORM
+    // =========================
 
     const handleCreateChange = (e) => {
+
         const { name, value } = e.target;
 
         setCreateProjectData((prev) => ({
             ...prev,
             [name]: value,
         }));
+
     };
 
 
+    // =========================
+    // CREATE PROJECT
+    // =========================
+
     const handleCreateProject = async (e) => {
+
         e.preventDefault();
 
         setLoading(true);
@@ -44,54 +105,75 @@ const UserDashboard = () => {
         setSuccess("");
 
         try {
-            const response = await axios.post(
-                "http://localhost:5000/project/createproject",
+
+            const response = await API.post(
+                "/project/createproject",
                 {
                     projectname: createProjectData.projectname,
                     projectdetails: createProjectData.projectdetails,
-                    inviteCode: createProjectData.inviteCode
                 },
                 {
                     withCredentials: true,
                 }
             );
 
-            console.log("PROJECT CREATED:", response.data);
+            console.log(
+                "PROJECT CREATED:",
+                response.data
+            );
 
             const newProject = response.data;
 
+
             // Convert backend project structure
-            // into the structure your UI uses
+            // into frontend UI structure
+
             const formattedProject = {
+
                 id: newProject._id,
+
                 name: newProject.projectname,
+
                 description: newProject.projectdetails,
+
                 role: "Owner",
+
                 inviteCode: newProject.inviteCode,
+
                 members: newProject.members?.length || 1,
+
                 progress: 0,
+
                 status: "Active",
+
             };
+
 
             setProjects((prev) => [
                 ...prev,
                 formattedProject,
             ]);
 
+
             setCreateProjectData({
                 projectname: "",
                 projectdetails: "",
-                inviteCode: ""
             });
 
-            setSuccess("Project created successfully.");
 
-            // Optional:
-            // automatically move user to My Projects
+            setSuccess(
+                "Project created successfully."
+            );
+
+
             setActiveTab("projects");
 
         } catch (err) {
-            console.log("CREATE PROJECT ERROR:", err);
+
+            console.log(
+                "CREATE PROJECT ERROR:",
+                err
+            );
 
             setError(
                 err.response?.data?.message ||
@@ -99,35 +181,77 @@ const UserDashboard = () => {
             );
 
         } finally {
+
             setLoading(false);
+
         }
+
     };
 
+
+    // =========================
     // JOIN PROJECT
+    // =========================
 
     const handleJoinChange = (e) => {
+
         const { name, value } = e.target;
 
         setJoinProjectData((prev) => ({
             ...prev,
             [name]: value,
         }));
+
     };
 
 
-    const handleJoinProject = (e) => {
+    const handleJoinProject = async (e) => {
+
         e.preventDefault();
 
-        console.log("Join Project:", joinProjectData);
+        console.log(
+            "Join Project:",
+            joinProjectData
+        );
 
-        // Backend API will be connected later.
+        const response = await API.post(
+            "/project/joinproject",
+            joinProjectData
+        );
+
+        const joinedProject = response.data.project;
+
+        const formattedProject = {
+            id: joinedProject._id,
+            name: joinedProject.projectname,
+            description: joinedProject.projectdetails,
+            role: "Member",
+            inviteCode: joinedProject.inviteCode,
+            members: joinedProject.members?.length || 0,
+            progress: 0,
+            status: "Active",
+        };
+
+        setProjects((prevProjects) => [
+            ...prevProjects,
+            formattedProject
+        ]);
+
+        navigate("/userdashboard");
+        console.log("is it running")
     };
 
+
+    // =========================
     // LOGOUT
+    // =========================
+
     const handleLogout = () => {
+
         console.log("Logout");
 
         // Logout API will be connected later.
+
     };
 
 
@@ -135,11 +259,13 @@ const UserDashboard = () => {
         <div className="min-h-screen bg-gray-100">
 
             {/* Navbar */}
+
             <nav className="bg-[#033E3E] text-white">
 
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
                     <div>
+
                         <h1 className="text-xl font-bold">
                             ProjectFlow
                         </h1>
@@ -147,7 +273,9 @@ const UserDashboard = () => {
                         <p className="text-xs text-[#92C7C7]">
                             Project Management Tool
                         </p>
+
                     </div>
+
 
                     <div className="flex items-center gap-4">
 
@@ -162,6 +290,7 @@ const UserDashboard = () => {
                             </p>
 
                         </div>
+
 
                         <button
                             onClick={handleLogout}
@@ -179,7 +308,6 @@ const UserDashboard = () => {
 
             <div className="mx-auto flex max-w-7xl">
 
-
                 {/* Sidebar */}
 
                 <aside className="hidden min-h-[calc(100vh-72px)] w-64 border-r bg-white p-5 md:block">
@@ -187,6 +315,7 @@ const UserDashboard = () => {
                     <p className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400">
                         Workspace
                     </p>
+
 
                     <div className="space-y-2">
 
@@ -242,8 +371,9 @@ const UserDashboard = () => {
 
                 <main className="flex-1 p-6 sm:p-8">
 
-
-                    {/*OVERVIEW*/}
+                    {/* =========================
+                        OVERVIEW
+                    ========================= */}
 
                     {activeTab === "overview" && (
 
@@ -290,12 +420,14 @@ const UserDashboard = () => {
                                     </p>
 
                                     <h3 className="mt-2 text-3xl font-bold text-green-600">
+
                                         {
                                             projects.filter(
                                                 (project) =>
                                                     project.status === "Active"
                                             ).length
                                         }
+
                                     </h3>
 
                                 </div>
@@ -308,6 +440,7 @@ const UserDashboard = () => {
                                     </p>
 
                                     <h3 className="mt-2 text-3xl font-bold text-[#033E3E]">
+
                                         {
                                             projects.reduce(
                                                 (total, project) =>
@@ -315,6 +448,7 @@ const UserDashboard = () => {
                                                 0
                                             )
                                         }
+
                                     </h3>
 
                                 </div>
@@ -343,10 +477,13 @@ const UserDashboard = () => {
                                     Quick Actions
                                 </h3>
 
+
                                 <div className="grid gap-4 sm:grid-cols-2">
 
                                     <button
-                                        onClick={() => setActiveTab("create")}
+                                        onClick={() =>
+                                            setActiveTab("create")
+                                        }
                                         className="rounded-2xl bg-[#033E3E] p-6 text-left text-white transition hover:-translate-y-1 hover:bg-[#075858]"
                                     >
 
@@ -362,7 +499,9 @@ const UserDashboard = () => {
 
 
                                     <button
-                                        onClick={() => setActiveTab("join")}
+                                        onClick={() =>
+                                            setActiveTab("join")
+                                        }
                                         className="rounded-2xl border-2 border-[#92C7C7] bg-white p-6 text-left transition hover:-translate-y-1"
                                     >
 
@@ -392,7 +531,9 @@ const UserDashboard = () => {
                                     </h3>
 
                                     <button
-                                        onClick={() => setActiveTab("projects")}
+                                        onClick={() =>
+                                            setActiveTab("projects")
+                                        }
                                         className="text-sm font-semibold text-[#033E3E]"
                                     >
                                         View all
@@ -403,78 +544,81 @@ const UserDashboard = () => {
 
                                 <div className="grid gap-5 lg:grid-cols-2">
 
-                                    {projects.slice(0, 2).map((project) => (
+                                    {projects
+                                        .slice(0, 2)
+                                        .map((project) => (
 
-                                        <div
-                                            key={project.id}
-                                            className="rounded-2xl bg-white p-6 shadow-sm"
-                                        >
+                                            <div
+                                                key={project.id}
+                                                className="rounded-2xl bg-white p-6 shadow-sm"
+                                            >
 
-                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-start justify-between">
 
-                                                <div>
+                                                    <div>
 
-                                                    <h4 className="text-lg font-bold text-[#033E3E]">
-                                                        {project.name}
-                                                    </h4>
+                                                        <h4 className="text-lg font-bold text-[#033E3E]">
+                                                            {project.name}
+                                                        </h4>
 
-                                                    <p className="mt-1 text-sm text-gray-500">
-                                                        {project.description}
-                                                    </p>
+                                                        <p className="mt-1 text-sm text-gray-500">
+                                                            {project.description}
+                                                        </p>
 
-                                                </div>
-
-                                                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
-                                                    {project.status}
-                                                </span>
-
-                                            </div>
+                                                    </div>
 
 
-                                            <div className="mt-5">
-
-                                                <div className="mb-2 flex justify-between text-xs">
-
-                                                    <span className="text-gray-500">
-                                                        Progress
-                                                    </span>
-
-                                                    <span className="font-bold">
-                                                        {project.progress}%
+                                                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
+                                                        {project.status}
                                                     </span>
 
                                                 </div>
 
 
-                                                <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+                                                <div className="mt-5">
 
-                                                    <div
-                                                        className="h-full rounded-full bg-[#033E3E]"
-                                                        style={{
-                                                            width: `${project.progress}%`,
-                                                        }}
-                                                    />
+                                                    <div className="mb-2 flex justify-between text-xs">
+
+                                                        <span className="text-gray-500">
+                                                            Progress
+                                                        </span>
+
+                                                        <span className="font-bold">
+                                                            {project.progress}%
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+
+                                                        <div
+                                                            className="h-full rounded-full bg-[#033E3E]"
+                                                            style={{
+                                                                width: `${project.progress}%`,
+                                                            }}
+                                                        />
+
+                                                    </div>
+
+                                                </div>
+
+
+                                                <div className="mt-5 flex justify-between text-xs text-gray-500">
+
+                                                    <span>
+                                                        {project.members} members
+                                                    </span>
+
+                                                    <span>
+                                                        {project.role}
+                                                    </span>
 
                                                 </div>
 
                                             </div>
 
-
-                                            <div className="mt-5 flex justify-between text-xs text-gray-500">
-
-                                                <span>
-                                                    {project.members} members
-                                                </span>
-
-                                                <span>
-                                                    {project.role}
-                                                </span>
-
-                                            </div>
-
-                                        </div>
-
-                                    ))}
+                                        ))}
 
                                 </div>
 
@@ -485,7 +629,9 @@ const UserDashboard = () => {
                     )}
 
 
-                    {/*PROJECTS */}
+                    {/* =========================
+                        PROJECTS
+                    ========================= */}
 
                     {activeTab === "projects" && (
 
@@ -530,9 +676,11 @@ const UserDashboard = () => {
                                             {project.description}
                                         </p>
 
+
                                         <p className="mt-3 text-sm text-gray-500">
-                                            Invite code:  {project.inviteCode}
+                                            Invite code: {project.inviteCode}
                                         </p>
+
 
                                         <div className="mt-5 text-sm text-gray-500">
                                             {project.members} members
@@ -541,7 +689,9 @@ const UserDashboard = () => {
 
                                         <button
                                             onClick={() =>
-                                                navigate(`/projects/${project.id}`)
+                                                navigate(
+                                                    `/projects/${project.id}`
+                                                )
                                             }
                                             className="mt-5 w-full rounded-lg bg-[#033E3E] py-3 text-sm font-bold text-white hover:bg-[#075858]"
                                         >
@@ -587,9 +737,6 @@ const UserDashboard = () => {
 
                                 <div className="space-y-5">
 
-
-                                    {/* Error */}
-
                                     {error && (
 
                                         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -598,8 +745,6 @@ const UserDashboard = () => {
 
                                     )}
 
-
-                                    {/* Success */}
 
                                     {success && (
 
@@ -610,8 +755,6 @@ const UserDashboard = () => {
                                     )}
 
 
-                                    {/* Project Name */}
-
                                     <div>
 
                                         <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -621,7 +764,9 @@ const UserDashboard = () => {
                                         <input
                                             type="text"
                                             name="projectname"
-                                            value={createProjectData.projectname}
+                                            value={
+                                                createProjectData.projectname
+                                            }
                                             onChange={handleCreateChange}
                                             placeholder="e.g. E-Commerce Platform"
                                             required
@@ -631,8 +776,6 @@ const UserDashboard = () => {
                                     </div>
 
 
-                                    {/* Project Details */}
-
                                     <div>
 
                                         <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -641,7 +784,9 @@ const UserDashboard = () => {
 
                                         <textarea
                                             name="projectdetails"
-                                            value={createProjectData.projectdetails}
+                                            value={
+                                                createProjectData.projectdetails
+                                            }
                                             onChange={handleCreateChange}
                                             placeholder="Describe your project..."
                                             rows="5"
@@ -706,12 +851,12 @@ const UserDashboard = () => {
 
                                 <input
                                     type="text"
-                                    name="projectCode"
-                                    value={joinProjectData.projectCode}
+                                    name="inviteCode"
+                                    value={joinProjectData.inviteCode}
                                     onChange={handleJoinChange}
                                     placeholder="e.g. PMT-7X92K"
                                     required
-                                    className="w-full rounded-xl border-2 border-[#92C7C7] px-4 py-3 uppercase outline-none focus:border-[#033E3E]"
+                                    className="w-full rounded-xl border-2 border-[#92C7C7] px-4 py-3 outline-none focus:border-[#033E3E]"
                                 />
 
 
