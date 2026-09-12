@@ -10,13 +10,18 @@ const User = require("../models/userModel");
 exports.showProject = async (req, res) => {
     try {
         console.log("USER ID:", req.user.id);
+
         const projects = await Project.find({
             $or: [
                 { owner: req.user.id },
                 { members: req.user.id }
             ]
-        });
+        })
+            .populate("owner", "username email")
+            .populate("members", "username email");
+
         console.log("PROJECTS:", projects);
+
         return res.status(200).json(projects);
 
     } catch (err) {

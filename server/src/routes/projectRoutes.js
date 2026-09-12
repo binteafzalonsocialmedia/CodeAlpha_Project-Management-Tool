@@ -9,6 +9,7 @@ console.log(typeof authMiddleware);
 
 router.get("/createproject", authMiddleware, showProject);
 
+
 router.post("/createproject", authMiddleware, Project);
 
 router.post("/joinproject", authMiddleware, JoinProject);

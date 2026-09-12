@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
+import Task from "../Users/TaskForm";
 
 const UserDashboard = () => {
     const navigate = useNavigate();
+
+    const [currentUser, setCurrentUser] = useState(null);
 
     const [activeTab, setActiveTab] = useState("overview");
 
@@ -24,6 +27,27 @@ const UserDashboard = () => {
 
     const [success, setSuccess] = useState("");
 
+    const [selectedProject, setSelectedProject] = useState(null);
+
+
+
+    //current user 
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await API.get("/auth/me", {
+                    withCredentials: true
+                });
+
+                setCurrentUser(response.data.user);
+                console.log("current user:", response.data.user);
+            } catch (err) {
+                console.log("CURRENT USER ERROR:", err);
+            }
+        };
+
+        fetchCurrentUser();
+    }, []);
 
     // =========================
     // FETCH PROJECTS
@@ -46,14 +70,16 @@ const UserDashboard = () => {
                     "PROJECTS FROM DATABASE:",
                     response.data
                 );
-
+                const currentUserId = currentUser?._id;
                 const formattedProjects = response.data.map((project) => ({
                     id: project._id,
                     name: project.projectname,
                     description: project.projectdetails,
-                    role: "Owner",
+                    role: currentUserId === project.owner._id
+                        ? "Owner"
+                        : "Member",
                     inviteCode: project.inviteCode,
-                    members: project.members?.length || 0,
+                    members: project.members || [],
                     progress: 0,
                     status: "Active",
                 }));
@@ -140,7 +166,7 @@ const UserDashboard = () => {
 
                 inviteCode: newProject.inviteCode,
 
-                members: newProject.members?.length || 1,
+                members: newProject.members?.length || [],
 
                 progress: 0,
 
@@ -227,7 +253,7 @@ const UserDashboard = () => {
             description: joinedProject.projectdetails,
             role: "Member",
             inviteCode: joinedProject.inviteCode,
-            members: joinedProject.members?.length || 0,
+            members: joinedProject.members?.length || [],
             progress: 0,
             status: "Active",
         };
@@ -282,7 +308,7 @@ const UserDashboard = () => {
                         <div className="hidden text-right sm:block">
 
                             <p className="text-sm font-semibold">
-                                Socialmediauser
+                                {currentUser?.username || "User"}
                             </p>
 
                             <p className="text-xs text-[#92C7C7]">
@@ -386,7 +412,7 @@ const UserDashboard = () => {
                                 </p>
 
                                 <h2 className="mt-1 text-3xl font-bold text-[#033E3E]">
-                                    Welcome back, Socialmediauser
+                                    Welcome back, {currentUser?.username || "User"}
                                 </h2>
 
                                 <p className="mt-2 text-gray-500">
@@ -444,7 +470,7 @@ const UserDashboard = () => {
                                         {
                                             projects.reduce(
                                                 (total, project) =>
-                                                    total + project.members,
+                                                    total + (project.members?.length || 0),
                                                 0
                                             )
                                         }
@@ -606,12 +632,12 @@ const UserDashboard = () => {
 
                                                 <div className="mt-5 flex justify-between text-xs text-gray-500">
 
-                                                    <span>
-                                                        {project.members} members
+                                                    <span key={project._id}>
+                                                        Owner : {project.members[0]?.username}
                                                     </span>
 
                                                     <span>
-                                                        {project.role}
+                                                        Your Role : {project.role}
                                                     </span>
 
                                                 </div>
@@ -683,7 +709,7 @@ const UserDashboard = () => {
 
 
                                         <div className="mt-5 text-sm text-gray-500">
-                                            {project.members} members
+                                            {project.members.length} members
                                         </div>
 
 

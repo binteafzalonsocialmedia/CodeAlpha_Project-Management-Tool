@@ -14,8 +14,11 @@ function authMiddleware(req, res, next) {
         }
         req.user = data;
     } catch (err) {
-        console.log("err message:", err.message)
-    };
+        console.log("err message:", err.message);
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        });
+    }
     next();
 
 };

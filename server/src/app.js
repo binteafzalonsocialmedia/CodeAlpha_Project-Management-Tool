@@ -24,7 +24,9 @@ const authController = require('./controllers/authController');
 const authRoutes = require("./routes/authRoutes");
 const token = require("./utils/generateToken");
 const projectRoutes = require("./routes/projectRoutes");
+const taskRoutes = require("./routes/taskRoutes");
 
+app.use("/task", taskRoutes);
 app.use("/auth", authRoutes);
 app.use("/project", projectRoutes);
 

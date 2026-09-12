@@ -7,6 +7,8 @@ import Login from "./pages/shared/Login";
 import ForgotPassword from "./pages/shared/ForgotPasword";
 import Userdashboard from "./pages/Users/Dashboard";
 import Resetpassword from "./pages/shared/ResetPassword";
+import Task from "./pages/Users/TaskForm";
+import ProjectDetails from './pages/Users/ProjectDetails';
 
 function App() {
   const [FormData, setFormData] = useState(0)
@@ -43,8 +45,9 @@ function App() {
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/userdashboard" element={<Userdashboard />} />
         <Route path="/auth/resetpassword/:resetToken" element={<Resetpassword />} />
+        <Route path="/projects/:projectId" element={<ProjectDetails />} />
+        <Route path="/task/create" element={<Task />} />
       </Routes>
-
     </div>
   )
 }
