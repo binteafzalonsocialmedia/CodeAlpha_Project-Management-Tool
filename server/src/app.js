@@ -25,11 +25,13 @@ const authRoutes = require("./routes/authRoutes");
 const token = require("./utils/generateToken");
 const projectRoutes = require("./routes/projectRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const commentRoutes = require("./routes/commentRoutes");
 
+app.use("/comment", commentRoutes);
 app.use("/task", taskRoutes);
 app.use("/auth", authRoutes);
 app.use("/project", projectRoutes);
 
 app.listen(PORT, () => {
-    console.log("Server is running on port `${PORT}`")//this port?
+    console.log("Server is running on port `${PORT}`")
 })

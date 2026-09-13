@@ -12,6 +12,10 @@ const ProjectDetails = () => {
     const [error, setError] = useState("");
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [tasks, setTasks] = useState([]);
+    const [commentText, setCommentText] = useState("");
+    const [comments, setComments] = useState([]);
+    const [commentLoading, setCommentLoading] = useState(false);
+
     const isOwner =
         project?.owner?._id?.toString() === currentUser?._id?.toString();
 
@@ -91,6 +95,91 @@ const ProjectDetails = () => {
             fetchTasks();
         }
     }, [projectId]);
+
+
+
+
+
+
+
+
+
+
+    const handleCreateComment = async (taskId) => {
+        if (!commentText.trim()) {
+            return;
+        }
+
+        try {
+            setCommentLoading(true);
+
+            const response = await API.post(
+                `/comment/${taskId}/comments`,
+                {
+                    text: commentText
+                },
+                {
+                    withCredentials: true
+                }
+            );
+
+            console.log("COMMENT CREATED:", response.data);
+
+
+            setComments((prevComments) => ({
+                ...prevComments,
+                [taskId]: [
+                    ...(prevComments[taskId] || []),
+                    response.data.comment
+                ]
+            }));
+            setCommentText((prev) => ({
+                ...prev,
+                [taskId]: ""
+            }));
+
+        } catch (err) {
+            console.log("CREATE COMMENT ERROR:", err);
+        } finally {
+            setCommentLoading(false);
+        }
+    };
+
+
+
+    useEffect(() => {
+        if (tasks.length === 0) return;
+
+        const fetchComments = async () => {
+            try {
+                const commentsData = {};
+
+                for (const task of tasks) {
+                    const response = await API.get(
+                        `/comment/${task._id}/comments`,
+                        {
+                            withCredentials: true
+                        }
+                    );
+
+                    commentsData[task._id] =
+                        response.data.comments || [];
+                }
+
+                setComments(commentsData);
+
+            } catch (err) {
+                console.log("FETCH COMMENTS ERROR:", err);
+            }
+        };
+
+        fetchComments();
+    }, [tasks]);
+
+
+
+
+
 
 
 
@@ -329,10 +418,53 @@ const ProjectDetails = () => {
                                         <span>
                                             Status: {task.status || "Pending"}
                                         </span>
+                                    </div>
+                                    <div>
+                                        <h5 className="font-bold text-[#033E3E]">
+                                            Comments
+                                        </h5>
+                                    </div>
+                                    <div className="mt-4">
+                                        <input
+                                            type="text"
+                                            value={commentText}
+                                            onChange={(e) => setCommentText(e.target.value)}
+                                            placeholder="Write a comment..."
+                                            className="w-full rounded-lg border px-3 py-2"
+                                        />
+
+                                        <button
+                                            onClick={() => handleCreateComment(task._id)}
+                                            disabled={commentLoading}
+                                            className="mt-2 rounded-lg bg-[#033E3E] px-4 py-2 text-white"
+                                        >
+                                            {commentLoading ? "Adding..." : "Comment"}
+                                        </button>
+                                    </div>
+
+                                    <div className="mt-3 space-y-2">
+
+                                        {(comments[task._id] || []).map((comment) => (
+                                            <div
+                                                key={comment._id}
+                                                className="rounded-lg bg-gray-50 p-3"
+                                            >
+                                                <p className="font-semibold">
+                                                    {comment.user?.username || "User"}
+                                                </p>
+
+                                                <p className="text-sm text-gray-600">
+                                                    {comment.text}
+                                                </p>
+                                            </div>
+                                        ))}
 
                                     </div>
 
+
                                 </div>
+
+
                             ))
 
                         ) : (
@@ -348,8 +480,8 @@ const ProjectDetails = () => {
                     </div>
                 </div>
 
-            </main>
-        </div>
+            </main >
+        </div >
     );
 };
 
